@@ -345,6 +345,103 @@ describe('GET /api/v1/events/:id', () => {
 
     expect(response.statusCode).toBe(403)
   })
+
+  // T094: Contract test for GET /api/v1/events/:id with full details
+  it('should return full event details including creator and updater info', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/events/${testEventId}`,
+      headers: {
+        cookie: sessionCookie,
+      },
+    })
+
+    expect(response.statusCode).toBe(200)
+    const body = JSON.parse(response.body)
+
+    // Validate event fields
+    expect(body.id).toBe(testEventId)
+    expect(body.title).toBe('Test Event')
+    expect(body.location).toBe('Test Location')
+    expect(body.teamId).toBe('660e8400-e29b-41d4-a716-446655440001')
+
+    // Validate creator information
+    expect(body.creator).toBeDefined()
+    expect(body.creator.id).toBe('550e8400-e29b-41d4-a716-446655440000')
+    expect(body.creator.name).toBe('Test User')
+    expect(body.creator.email).toBe('test@example.com')
+
+    // Validate team information
+    expect(body.team).toBeDefined()
+    expect(body.team.id).toBe('660e8400-e29b-41d4-a716-446655440001')
+    expect(body.team.name).toBe('Test Team')
+
+    // Validate timestamps
+    expect(body.createdAt).toBeDefined()
+    expect(body.updatedAt).toBeDefined()
+  })
+
+  // T095: Integration test for event detail query with joins
+  it('should include updater info when event has been updated', async () => {
+    // Create a second user who will update the event
+    const [updater] = await testDb.db.insert(users).values({
+      id: 'aa0e8400-e29b-41d4-a716-446655440010',
+      email: 'updater@example.com',
+      name: 'Updater User',
+    }).returning()
+
+    // Add updater to the team
+    await testDb.db.insert(teamMembers).values({
+      userId: updater.id,
+      teamId: '660e8400-e29b-41d4-a716-446655440001',
+      role: 'member',
+    })
+
+    // Login as updater
+    const updaterLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email: 'updater@example.com' },
+    })
+    const updaterCookie = updaterLoginResponse.cookies[0].name + '=' + updaterLoginResponse.cookies[0].value
+
+    // Update the event
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/events/${testEventId}`,
+      headers: {
+        cookie: updaterCookie,
+      },
+      payload: {
+        title: 'Updated by Updater',
+      },
+    })
+
+    // Fetch event details
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/events/${testEventId}`,
+      headers: {
+        cookie: sessionCookie,
+      },
+    })
+
+    expect(response.statusCode).toBe(200)
+    const body = JSON.parse(response.body)
+
+    // Verify creator is still the original user
+    expect(body.creator.id).toBe('550e8400-e29b-41d4-a716-446655440000')
+    expect(body.creator.name).toBe('Test User')
+
+    // Verify updater is the new user
+    expect(body.updater).toBeDefined()
+    expect(body.updater.id).toBe('aa0e8400-e29b-41d4-a716-446655440010')
+    expect(body.updater.name).toBe('Updater User')
+    expect(body.updater.email).toBe('updater@example.com')
+
+    // Verify title was updated
+    expect(body.title).toBe('Updated by Updater')
+  })
 })
 
 describe('PATCH /api/v1/events/:id', () => {

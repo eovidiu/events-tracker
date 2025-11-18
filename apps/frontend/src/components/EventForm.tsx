@@ -1,6 +1,7 @@
-import { useForm, Controller } from 'react-hook-form'
+import { useEffect } from 'react'
+import { useForm, Controller, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createEventSchema, type CreateEventInput } from '@events-tracker/shared'
+import { createEventSchema, updateEventSchema, type CreateEventInput, type UpdateEventInput } from '@events-tracker/shared'
 import {
   TextField,
   TextArea,
@@ -10,49 +11,110 @@ import {
   Flex,
   Heading,
   Text,
+  Picker,
+  Item as PickerItem,
 } from '@adobe/react-spectrum'
-import { useCreateEvent } from '../hooks/useEvents'
+import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents'
+import AlertIcon from '@spectrum-icons/workflow/Alert'
+
+// T116: Common IANA timezones
+const TIMEZONES = [
+  'UTC',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Anchorage',
+  'America/Honolulu',
+  'Europe/London',
+  'Europe/Paris',
+  'Europe/Berlin',
+  'Europe/Rome',
+  'Europe/Bucharest',
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Asia/Hong_Kong',
+  'Asia/Singapore',
+  'Asia/Dubai',
+  'Australia/Sydney',
+  'Pacific/Auckland',
+]
 
 interface EventFormProps {
-  teamId: string
+  teamId?: string
+  eventId?: string // T086: Support edit mode
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  initialData?: any // T086: Pre-populate form for editing (type comes from backend)
   onSuccess?: () => void
 }
 
-export function EventForm({ teamId, onSuccess }: EventFormProps) {
+export function EventForm({ teamId, eventId, initialData, onSuccess }: EventFormProps) {
+  const isEditMode = Boolean(eventId) // T086: Track if we're in edit mode
   const createEvent = useCreateEvent()
+  const updateEvent = useUpdateEvent(eventId || '') // T086: Use update hook in edit mode (pass empty string if not editing)
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty }, // T087: Track dirty state
     reset,
-  } = useForm<CreateEventInput>({
-    resolver: zodResolver(createEventSchema),
-    defaultValues: {
+  } = useForm<CreateEventInput | UpdateEventInput>({
+    resolver: zodResolver(isEditMode ? updateEventSchema : createEventSchema),
+    defaultValues: initialData || {
       teamId,
       title: '',
       description: '',
       location: '',
       timezone: 'UTC',
     },
+    values: initialData, // T086: Pre-populate in edit mode
   })
 
-  const onSubmit = async (data: CreateEventInput) => {
+  // T117: Watch startDate for past event warning
+  const startDate = useWatch({ control, name: 'startDate' })
+  const isPastEvent = startDate && new Date(startDate) < new Date()
+
+  // T088: Unsaved changes warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
+
+  const onSubmit = async (data: CreateEventInput | UpdateEventInput) => {
     try {
-      await createEvent.mutateAsync(data)
+      if (isEditMode) {
+        // T086: Use update mutation in edit mode
+        // T080: Include updatedAt for optimistic locking
+        await updateEvent.mutateAsync({
+          ...data,
+          updatedAt: initialData?.updatedAt
+        } as UpdateEventInput)
+      } else {
+        await createEvent.mutateAsync(data as CreateEventInput)
+      }
       reset()
       onSuccess?.()
     } catch (error) {
       // Error is handled by mutation error state
-      console.error('Failed to create event:', error)
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} event:`, error)
     }
   }
+
+  const mutation = isEditMode ? updateEvent : createEvent
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)} width="100%" maxWidth="600px">
       <Flex direction="column" gap="size-200">
-        <Heading level={2}>Create New Event</Heading>
+        <Heading level={2}>{isEditMode ? 'Edit Event' : 'Create New Event'}</Heading>
 
+        {/* T118: Character count indicator for title */}
         <Controller
           name="title"
           control={control}
@@ -64,10 +126,12 @@ export function EventForm({ teamId, onSuccess }: EventFormProps) {
               validationState={errors.title ? 'invalid' : undefined}
               errorMessage={errors.title?.message}
               maxLength={200}
+              description={`${field.value?.length || 0}/200 characters`}
             />
           )}
         />
 
+        {/* T118: Character count indicator for description */}
         <Controller
           name="description"
           control={control}
@@ -80,6 +144,7 @@ export function EventForm({ teamId, onSuccess }: EventFormProps) {
               errorMessage={errors.description?.message}
               maxLength={10000}
               height="size-1600"
+              description={`${field.value?.length || 0}/10000 characters`}
             />
           )}
         />
@@ -149,39 +214,78 @@ export function EventForm({ teamId, onSuccess }: EventFormProps) {
           )}
         />
 
+        {/* T116: Timezone selector with common IANA timezones */}
         <Controller
           name="timezone"
           control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
+            <Picker
               label="Timezone"
               isRequired
+              selectedKey={field.value}
+              onSelectionChange={field.onChange}
               validationState={errors.timezone ? 'invalid' : undefined}
               errorMessage={errors.timezone?.message}
-              description="e.g., America/Los_Angeles, UTC, Europe/London"
-            />
+            >
+              {TIMEZONES.map((tz) => (
+                <PickerItem key={tz}>{tz}</PickerItem>
+              ))}
+            </Picker>
           )}
         />
 
-        {createEvent.isError && (
+        {/* T117: Past event warning */}
+        {isPastEvent && (
+          <View
+            backgroundColor="notice"
+            padding="size-200"
+            borderRadius="medium"
+            UNSAFE_style={{ border: '1px solid var(--spectrum-global-color-orange-600)' }}
+          >
+            <Flex direction="row" gap="size-100" alignItems="center">
+              <AlertIcon size="S" />
+              <Text>
+                <strong>Warning:</strong> This event is scheduled in the past. Please verify the date and time.
+              </Text>
+            </Flex>
+          </View>
+        )}
+
+        {mutation?.isError && (
           <View
             backgroundColor="negative"
             padding="size-200"
             borderRadius="medium"
           >
             <Text>
-              Error: {createEvent.error instanceof Error ? createEvent.error.message : 'Failed to create event'}
+              Error: {mutation.error instanceof Error ? mutation.error.message : `Failed to ${isEditMode ? 'update' : 'create'} event`}
             </Text>
+          </View>
+        )}
+
+        {/* T093: Display conflict error clearly */}
+        {mutation?.error instanceof Error && mutation.error.message.includes('Conflict') && (
+          <View
+            backgroundColor="notice"
+            padding="size-200"
+            borderRadius="medium"
+            UNSAFE_style={{ border: '1px solid var(--spectrum-global-color-orange-600)' }}
+          >
+            <Flex direction="row" gap="size-100" alignItems="center">
+              <AlertIcon size="S" />
+              <Text>
+                <strong>Conflict:</strong> This event was updated by another user. Please refresh the page and try again.
+              </Text>
+            </Flex>
           </View>
         )}
 
         <Button
           type="submit"
           variant="cta"
-          isDisabled={isSubmitting || createEvent.isPending}
+          isDisabled={isSubmitting || mutation?.isPending}
         >
-          {createEvent.isPending ? 'Creating...' : 'Create Event'}
+          {mutation?.isPending ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Event')}
         </Button>
       </Flex>
     </Form>
