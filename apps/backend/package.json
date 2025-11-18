@@ -1,0 +1,44 @@
+{
+  "name": "@events-tracker/backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
+    "drizzle:generate": "drizzle-kit generate:sqlite",
+    "drizzle:push": "drizzle-kit push:sqlite",
+    "drizzle:studio": "drizzle-kit studio",
+    "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules .turbo"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^9.2.0",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/swagger": "^8.13.0",
+    "@fastify/swagger-ui": "^2.0.1",
+    "@lucia-auth/adapter-sqlite": "^3.0.2",
+    "better-sqlite3": "^12.4.1",
+    "drizzle-orm": "^0.29.1",
+    "fastify": "^4.25.1",
+    "lucia": "^3.0.0",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@vitest/coverage-v8": "^1.0.4",
+    "drizzle-kit": "^0.20.6",
+    "tsx": "^4.7.0",
+    "vitest": "^1.0.4"
+  }
+}
