@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Provider as SpectrumProvider, defaultTheme } from '@adobe/react-spectrum'
 import { useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
+import { DashboardPage } from './pages/DashboardPage'
 import { EventsPage } from './pages/EventsPage'
 import { CreateEventPage } from './pages/CreateEventPage'
 import { EditEventPage } from './pages/EditEventPage'
@@ -43,7 +44,19 @@ function AppContent() {
       <Route
         path="/"
         element={
-          isAuthenticated ? <Navigate to="/events" replace /> : <Navigate to="/login" replace />
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          isAuthenticated ? (
+            <AppShell>
+              <DashboardPage />
+            </AppShell>
+          ) : (
+            <Navigate to="/login" replace />
+          )
         }
       />
       <Route
