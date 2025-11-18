@@ -14,9 +14,10 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './tests/setup.ts',
-    css: {
-      modules: {
-        classNameStrategy: 'non-scoped',
+    css: true,
+    server: {
+      deps: {
+        inline: [/@adobe/, /@react-spectrum/],
       },
     },
     coverage: {
