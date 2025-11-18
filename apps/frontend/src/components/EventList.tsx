@@ -78,7 +78,16 @@ function EventItem({ event, onEdit, onView }: { event: Event; onEdit: (id: strin
   )
 }
 
-export function EventList() {
+type SortOption = 'startDate' | 'title' | 'createdAt'
+type SortOrder = 'asc' | 'desc'
+
+interface EventListProps {
+  searchQuery?: string
+  sortBy?: SortOption
+  sortOrder?: SortOrder
+}
+
+export function EventList({ searchQuery = '', sortBy = 'startDate', sortOrder = 'asc' }: EventListProps) {
   const { data: events, isLoading, isError, error } = useEvents()
   const navigate = useNavigate()
 
@@ -89,6 +98,36 @@ export function EventList() {
   const handleView = (eventId: string) => {
     navigate(`/events/${eventId}`)
   }
+
+  // T114: Filter events by search query
+  const filteredEvents = events?.filter((event) => {
+    if (!searchQuery) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      event.title.toLowerCase().includes(query) ||
+      event.location?.toLowerCase().includes(query) ||
+      event.description?.toLowerCase().includes(query)
+    )
+  })
+
+  // T115: Sort events
+  const sortedEvents = filteredEvents?.sort((a, b) => {
+    let comparison = 0
+
+    switch (sortBy) {
+      case 'startDate':
+        comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        break
+      case 'title':
+        comparison = a.title.localeCompare(b.title)
+        break
+      case 'createdAt':
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        break
+    }
+
+    return sortOrder === 'asc' ? comparison : -comparison
+  })
 
   if (isLoading) {
     return (
@@ -120,13 +159,15 @@ export function EventList() {
     )
   }
 
-  if (!events || events.length === 0) {
+  if (!sortedEvents || sortedEvents.length === 0) {
     return (
       <IllustratedMessage>
         <NotFound />
-        <Heading>No events found</Heading>
+        <Heading>{searchQuery ? 'No matching events' : 'No events found'}</Heading>
         <Content>
-          Create your first event to get started with tracking your team's schedule.
+          {searchQuery
+            ? 'Try adjusting your search criteria.'
+            : "Create your first event to get started with tracking your team's schedule."}
         </Content>
       </IllustratedMessage>
     )
@@ -136,7 +177,7 @@ export function EventList() {
     <View width="100%">
       <ListView
         aria-label="Events list"
-        items={events}
+        items={sortedEvents}
         selectionMode="none"
         width="100%"
       >

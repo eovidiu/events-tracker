@@ -1,9 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public data?: any
   ) {
     super(message)
@@ -48,12 +49,14 @@ export async function apiClient<T>(
 export const api = {
   get: <T>(endpoint: string) => apiClient<T>(endpoint, { method: 'GET' }),
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   post: <T>(endpoint: string, data?: any) =>
     apiClient<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     }),
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   patch: <T>(endpoint: string, data?: any) =>
     apiClient<T>(endpoint, {
       method: 'PATCH',

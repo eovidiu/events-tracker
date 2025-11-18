@@ -27,6 +27,12 @@ export async function buildApp(
         },
       },
     },
+    // T121: Generate request ID for distributed tracing
+    genReqId: (req) => {
+      return req.headers['x-request-id'] || crypto.randomUUID()
+    },
+    requestIdHeader: 'x-request-id',
+    requestIdLogLabel: 'requestId',
   })
 
   // Register plugins
@@ -51,9 +57,28 @@ export async function buildApp(
 
   await fastify.register(swaggerPlugin)
 
+  // T121: Log request details with request ID
+  fastify.addHook('onRequest', async (request, _reply) => {
+    request.log.info({
+      requestId: request.id,
+      method: request.method,
+      url: request.url,
+      userAgent: request.headers['user-agent'],
+    }, 'Incoming request')
+  })
+
   // Add global hooks for auth and team context
   fastify.addHook('onRequest', createAuthMiddleware(sqlite))
   fastify.addHook('onRequest', createTeamContextMiddleware(db))
+
+  // T121: Log response with request ID
+  fastify.addHook('onResponse', async (request, reply) => {
+    request.log.info({
+      requestId: request.id,
+      statusCode: reply.statusCode,
+      responseTime: reply.getResponseTime(),
+    }, 'Request completed')
+  })
 
   // Register routes
   await fastify.register(createAuthRoutes(sqlite, db), { prefix: '/api/v1/auth' })

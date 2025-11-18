@@ -109,28 +109,62 @@ export function EventDetailsPage() {
           <View>
             <Heading level={3} marginBottom="size-100">Schedule</Heading>
             <Flex direction="column" gap="size-200">
-              <View>
-                <Text><strong>Starts:</strong></Text>
-                <Text>{formatDate(event.startDate)}</Text>
-              </View>
-              <View>
-                <Text><strong>Ends:</strong></Text>
-                <Text>{formatDate(event.endDate)}</Text>
-              </View>
+              {/* T120: Multi-day event support - show date range or single date/time */}
+              {(() => {
+                const startDate = new Date(event.startDate)
+                const endDate = new Date(event.endDate)
+                const startDay = startDate.toLocaleDateString()
+                const endDay = endDate.toLocaleDateString()
+                const isMultiDay = startDay !== endDay
+
+                if (isMultiDay) {
+                  return (
+                    <>
+                      <View>
+                        <Text><strong>Event Dates:</strong></Text>
+                        <Text>{formatDate(startDate)} to {formatDate(endDate)}</Text>
+                        <Text UNSAFE_style={{ fontSize: '0.875rem', color: 'var(--spectrum-global-color-gray-700)', marginTop: '0.5rem' }}>
+                          Multi-day event ({Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days)
+                        </Text>
+                      </View>
+                    </>
+                  )
+                } else {
+                  return (
+                    <>
+                      <View>
+                        <Text><strong>Starts:</strong></Text>
+                        <Text>{formatDate(startDate)}</Text>
+                      </View>
+                      <View>
+                        <Text><strong>Ends:</strong></Text>
+                        <Text>{formatDate(endDate)}</Text>
+                      </View>
+                    </>
+                  )
+                }
+              })()}
             </Flex>
           </View>
         </Flex>
 
-        {/* Metadata */}
+        {/* Metadata - T102: Event metadata section with creator/updater info */}
         <View borderTopWidth="thin" borderTopColor="gray-300" paddingTop="size-300">
           <Heading level={4} marginBottom="size-100">Event Information</Heading>
           <Flex direction="column" gap="size-100">
             <Text UNSAFE_style={{ fontSize: '0.875rem', color: 'var(--spectrum-global-color-gray-700)' }}>
               Created: {formatDate(event.createdAt)}
+              {event.creator && ` by ${event.creator.name}`}
             </Text>
             <Text UNSAFE_style={{ fontSize: '0.875rem', color: 'var(--spectrum-global-color-gray-700)' }}>
               Last updated: {formatDate(event.updatedAt)}
+              {event.updater && ` by ${event.updater.name}`}
             </Text>
+            {event.team && (
+              <Text UNSAFE_style={{ fontSize: '0.875rem', color: 'var(--spectrum-global-color-gray-700)' }}>
+                Team: {event.team.name}
+              </Text>
+            )}
           </Flex>
         </View>
       </Flex>

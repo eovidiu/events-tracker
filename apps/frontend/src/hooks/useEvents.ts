@@ -60,7 +60,7 @@ export function useEvent(eventId: string) {
 }
 
 /**
- * Hook to update an existing event
+ * Hook to update an existing event - T092: With optimistic updates
  */
 export function useUpdateEvent(eventId: string) {
   const queryClient = useQueryClient()
@@ -69,8 +69,48 @@ export function useUpdateEvent(eventId: string) {
     mutationFn: async (eventData: UpdateEventInput): Promise<Event> => {
       return await api.patch<Event>(`/events/${eventId}`, eventData)
     },
+    // T092: Optimistic update - update UI immediately before server responds
+    onMutate: async (newEventData) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['events', eventId] })
+      await queryClient.cancelQueries({ queryKey: ['events'] })
+
+      // Snapshot the previous values
+      const previousEvent = queryClient.getQueryData<Event>(['events', eventId])
+      const previousEvents = queryClient.getQueryData<Event[]>(['events'])
+
+      // Optimistically update the single event
+      if (previousEvent) {
+        queryClient.setQueryData<Event>(['events', eventId], {
+          ...previousEvent,
+          ...newEventData,
+        })
+      }
+
+      // Optimistically update the events list
+      if (previousEvents) {
+        queryClient.setQueryData<Event[]>(
+          ['events'],
+          previousEvents.map((event) =>
+            event.id === eventId ? { ...event, ...newEventData } : event
+          )
+        )
+      }
+
+      // Return context with snapshot for rollback
+      return { previousEvent, previousEvents }
+    },
+    onError: (err, newEventData, context) => {
+      // Rollback to previous values on error
+      if (context?.previousEvent) {
+        queryClient.setQueryData(['events', eventId], context.previousEvent)
+      }
+      if (context?.previousEvents) {
+        queryClient.setQueryData(['events'], context.previousEvents)
+      }
+    },
     onSuccess: () => {
-      // Invalidate both the specific event and the events list
+      // Invalidate to ensure we have the latest data from server
       queryClient.invalidateQueries({ queryKey: ['events', eventId] })
       queryClient.invalidateQueries({ queryKey: ['events'] })
     },
