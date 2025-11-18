@@ -108,8 +108,12 @@ export const test = base.extend<CustomFixtures>({
     await page.getByLabel('Email').fill(testData.users.alice.email)
     await page.getByRole('button', { name: 'Login' }).click()
 
-    // Wait for redirect to events page
-    await page.waitForURL('/events')
+    // Wait for redirect to dashboard page (default after login)
+    await page.waitForURL('/dashboard')
+
+    // Navigate to events page for tests that expect it
+    await page.goto('/events')
+    await page.waitForLoadState('networkidle')
 
     // Provide the authenticated page to the test
     await use(page)

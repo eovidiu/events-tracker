@@ -8,8 +8,8 @@ test.describe('Authentication', () => {
     await page.getByLabel('Email').fill(testData.users.alice.email)
     await page.getByRole('button', { name: 'Login' }).click()
 
-    // Should redirect to events page
-    await expect(page).toHaveURL('/events')
+    // Should redirect to dashboard page (default landing page)
+    await expect(page).toHaveURL('/dashboard')
 
     // Should display user email
     await expect(page.getByText(testData.users.alice.email)).toBeVisible()
@@ -61,13 +61,13 @@ test.describe('Authentication', () => {
     await expect(page.getByText(testData.users.alice.email)).toBeVisible()
   })
 
-  test('should redirect authenticated user from login to events', async ({
+  test('should redirect authenticated user from login to dashboard', async ({
     authenticatedPage: page,
   }) => {
     // Already authenticated, try to go to login page
     await page.goto('/login')
 
-    // Should redirect to events page
-    await expect(page).toHaveURL('/events')
+    // Should redirect to dashboard page
+    await expect(page).toHaveURL('/dashboard')
   })
 })

@@ -35,13 +35,14 @@ test.describe('Event Management', () => {
     // Fill in start date and time (use today's date + 1 day)
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    const dateStr = tomorrow.toISOString().split('T')[0]
-    await page.getByLabel('Start Date').fill(dateStr)
-    await page.getByLabel('Start Time').fill('10:00')
+    const startDateTime = tomorrow.toISOString().slice(0, 16) // Format: YYYY-MM-DDTHH:MM
+    await page.getByLabel('Start Date').fill(startDateTime)
 
-    // Fill in end date and time
-    await page.getByLabel('End Date').fill(dateStr)
-    await page.getByLabel('End Time').fill('11:00')
+    // Fill in end date and time (1 hour later)
+    const endTime = new Date(tomorrow)
+    endTime.setHours(endTime.getHours() + 1)
+    const endDateTime = endTime.toISOString().slice(0, 16)
+    await page.getByLabel('End Date').fill(endDateTime)
 
     // Submit the form
     await page.getByRole('button', { name: /create/i }).click()
@@ -105,11 +106,13 @@ test.describe('Event Management', () => {
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    const dateStr = tomorrow.toISOString().split('T')[0]
-    await page.getByLabel('Start Date').fill(dateStr)
-    await page.getByLabel('Start Time').fill('09:00')
-    await page.getByLabel('End Date').fill(dateStr)
-    await page.getByLabel('End Time').fill('10:00')
+    const startDateTime = tomorrow.toISOString().slice(0, 16) // Format: YYYY-MM-DDTHH:MM
+    await page.getByLabel('Start Date').fill(startDateTime)
+
+    const endTime = new Date(tomorrow)
+    endTime.setHours(endTime.getHours() + 1)
+    const endDateTime = endTime.toISOString().slice(0, 16)
+    await page.getByLabel('End Date').fill(endDateTime)
 
     await page.getByRole('button', { name: /create/i }).click()
     await expect(page).toHaveURL('/events')
