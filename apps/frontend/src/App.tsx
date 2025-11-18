@@ -8,6 +8,9 @@ import { CreateEventPage } from './pages/CreateEventPage'
 import { EditEventPage } from './pages/EditEventPage'
 import { EventDetailsPage } from './pages/EventDetailsPage'
 import { LoginPage } from './pages/LoginPage'
+import { NotFoundPage } from './pages/NotFoundPage'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { AppShell } from './components/Navigation/AppShell'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,32 +48,68 @@ function AppContent() {
       />
       <Route
         path="/events"
-        element={isAuthenticated ? <EventsPage /> : <Navigate to="/login" replace />}
+        element={
+          isAuthenticated ? (
+            <AppShell>
+              <EventsPage />
+            </AppShell>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
       <Route
         path="/events/new"
-        element={isAuthenticated ? <CreateEventPage /> : <Navigate to="/login" replace />}
+        element={
+          isAuthenticated ? (
+            <AppShell>
+              <CreateEventPage />
+            </AppShell>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
       <Route
         path="/events/:id"
-        element={isAuthenticated ? <EventDetailsPage /> : <Navigate to="/login" replace />}
+        element={
+          isAuthenticated ? (
+            <AppShell>
+              <EventDetailsPage />
+            </AppShell>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
       <Route
         path="/events/:id/edit"
-        element={isAuthenticated ? <EditEventPage /> : <Navigate to="/login" replace />}
+        element={
+          isAuthenticated ? (
+            <AppShell>
+              <EditEventPage />
+            </AppShell>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
+      {/* T127: 404 page for unmatched routes */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
 
 export default function App() {
   return (
-    <SpectrumProvider theme={defaultTheme}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </SpectrumProvider>
+    <ErrorBoundary>
+      <SpectrumProvider theme={defaultTheme}>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </SpectrumProvider>
+    </ErrorBoundary>
   )
 }
