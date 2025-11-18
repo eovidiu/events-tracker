@@ -1,5 +1,4 @@
 import Fastify from 'fastify'
-import fastifyHelmet from '@fastify/helmet'
 import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
 import { swaggerPlugin } from './plugins/swagger.js'
