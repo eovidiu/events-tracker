@@ -25,7 +25,7 @@ export function CreateEventPage() {
             <ArrowLeft />
             <span>Back</span>
           </Button>
-          <Heading level={1}>Create New Event</Heading>
+          <Heading level={1}>Create Event</Heading>
         </Flex>
 
         <Divider />

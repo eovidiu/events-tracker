@@ -5,13 +5,16 @@ export function MetricsCard({ title, value, percentageChange, trend, icon, isLoa
   if (isLoading) {
     return (
       <View
-        padding="size-200"
+        padding="size-300"
         borderWidth="thin"
         borderColor="default"
         borderRadius="medium"
         backgroundColor="gray-50"
+        UNSAFE_style={{ flex: '1 1 200px', minWidth: '200px', maxWidth: '280px' }}
       >
-        <Text>{title}</Text>
+        <Text UNSAFE_style={{ fontSize: '0.875rem', color: 'var(--spectrum-global-color-gray-700)' }}>
+          {title}
+        </Text>
         <ProgressCircle aria-label="Loading" isIndeterminate size="S" marginTop="size-100" />
       </View>
     )
@@ -19,19 +22,22 @@ export function MetricsCard({ title, value, percentageChange, trend, icon, isLoa
 
   return (
     <View
-      padding="size-200"
+      padding="size-300"
       borderWidth="thin"
       borderColor="default"
       borderRadius="medium"
       backgroundColor="gray-50"
+      UNSAFE_style={{ flex: '1 1 200px', minWidth: '200px', maxWidth: '280px' }}
       data-component="metrics-card"
       data-trend={trend}
     >
       {icon && <View marginBottom="size-100">{icon}</View>}
-      <Text>{title}</Text>
+      <Text UNSAFE_style={{ fontSize: '0.875rem', color: 'var(--spectrum-global-color-gray-700)' }}>
+        {title}
+      </Text>
       <View marginTop="size-100">
-        <Text>
-          <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{value}</span>
+        <Text UNSAFE_style={{ fontSize: '2rem', fontWeight: 'bold', display: 'block' }}>
+          {value}
         </Text>
       </View>
       {percentageChange !== null && (

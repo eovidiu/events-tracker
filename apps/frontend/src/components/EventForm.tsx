@@ -99,8 +99,10 @@ export function EventForm({ teamId, eventId, initialData, onSuccess }: EventForm
       } else {
         await createEvent.mutateAsync(data as CreateEventInput)
       }
-      reset()
+      // Call onSuccess first before resetting form
       onSuccess?.()
+      // Reset form after navigation is triggered
+      setTimeout(() => reset(), 100)
     } catch (error) {
       // Error is handled by mutation error state
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} event:`, error)
@@ -112,7 +114,7 @@ export function EventForm({ teamId, eventId, initialData, onSuccess }: EventForm
   return (
     <Form onSubmit={handleSubmit(onSubmit)} width="100%" maxWidth="600px">
       <Flex direction="column" gap="size-200">
-        <Heading level={2}>{isEditMode ? 'Edit Event' : 'Create New Event'}</Heading>
+        <Heading level={2}>{isEditMode ? 'Edit Event' : 'Create Event'}</Heading>
 
         {/* T118: Character count indicator for title */}
         <Controller

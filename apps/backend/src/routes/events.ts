@@ -178,5 +178,32 @@ export function createEventsRoutes(db: BetterSQLite3Database<typeof schema>) {
       return reply.code(500).send({ error: 'Internal server error' })
     }
   })
+
+  // Delete event
+  fastify.delete('/events/:id', async (request, reply) => {
+    // Require authentication
+    if (!request.userId) {
+      return reply.code(401).send({ error: 'Authentication required' })
+    }
+
+    try {
+      const { id } = request.params as { id: string }
+
+      // Check access and delete event
+      await eventService.deleteEvent(id, request.teamIds)
+
+      return reply.code(204).send()
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Event not found') {
+        return reply.code(404).send({ error: 'Event not found' })
+      }
+
+      if (error instanceof Error && error.message === 'Access denied') {
+        return reply.code(403).send({ error: 'Access denied' })
+      }
+
+      return reply.code(500).send({ error: 'Internal server error' })
+    }
+  })
   }
 }

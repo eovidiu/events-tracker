@@ -5,7 +5,7 @@ test.describe('Event Management', () => {
     await expect(page).toHaveURL('/events')
 
     // Should see the heading
-    await expect(page.getByRole('heading', { name: 'Events' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Events', exact: true })).toBeVisible()
 
     // Should see at least one event from seeded data
     await expect(page.getByText('Team Planning Meeting')).toBeVisible()

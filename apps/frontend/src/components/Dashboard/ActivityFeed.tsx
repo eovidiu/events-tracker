@@ -15,6 +15,7 @@ export function ActivityFeed({ events, maxItems = 10, isLoading }: ActivityFeedP
         borderColor="default"
         borderRadius="medium"
         backgroundColor="gray-50"
+        width="100%"
       >
         <Heading level={3}>Recent Activity</Heading>
         <View marginTop="size-200">
@@ -32,6 +33,7 @@ export function ActivityFeed({ events, maxItems = 10, isLoading }: ActivityFeedP
         borderColor="default"
         borderRadius="medium"
         backgroundColor="gray-50"
+        width="100%"
       >
         <Heading level={3}>Recent Activity</Heading>
         <View marginTop="size-200">
@@ -48,6 +50,7 @@ export function ActivityFeed({ events, maxItems = 10, isLoading }: ActivityFeedP
       borderColor="default"
       borderRadius="medium"
       backgroundColor="gray-50"
+      width="100%"
     >
       <Heading level={3}>Recent Activity</Heading>
       <View

@@ -6,7 +6,7 @@ import { ActivityFeed } from '../components/Dashboard/ActivityFeed'
 
 export function DashboardPage() {
   const { data: metrics, isLoading: metricsLoading, isError: metricsError, error: metricsErrorDetails } = useDashboardMetrics()
-  const { data: events = [], isLoading: eventsLoading } = useEvents()
+  const { data: events = [], isLoading: eventsLoading, isError: eventsError, error: eventsErrorDetails } = useEvents()
 
   if (metricsLoading || eventsLoading) {
     return (
@@ -20,14 +20,14 @@ export function DashboardPage() {
     )
   }
 
-  if (metricsError) {
+  if (metricsError || eventsError) {
     return (
       <View padding="size-400">
         <Heading level={1}>Dashboard</Heading>
         <View marginTop="size-400">
           <Text>Error loading dashboard data</Text>
-          {metricsErrorDetails && (
-            <Text marginTop="size-100">{(metricsErrorDetails as Error).message}</Text>
+          {(metricsErrorDetails || eventsErrorDetails) && (
+            <Text marginTop="size-100">{((metricsErrorDetails || eventsErrorDetails) as Error).message}</Text>
           )}
         </View>
       </View>
@@ -35,7 +35,11 @@ export function DashboardPage() {
   }
 
   // Sort events by most recent first (by updatedAt)
-  const sortedEvents = [...events].sort((a, b) => {
+  // Debug: Check what events actually is
+  console.log('Events data:', events, 'Type:', typeof events, 'IsArray:', Array.isArray(events))
+
+  const eventsArray = Array.isArray(events) ? events : []
+  const sortedEvents = [...eventsArray].sort((a, b) => {
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   })
 
@@ -43,20 +47,14 @@ export function DashboardPage() {
     <View padding="size-400">
       <Heading level={1}>Dashboard</Heading>
 
-      <View
-        marginTop="size-400"
-        data-layout="two-column"
-        UNSAFE_style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}
-      >
-        {/* Left Column - Stats Overview */}
-        <View data-column="left">
-          <StatsOverview metrics={metrics ?? null} isLoading={metricsLoading} />
-        </View>
+      {/* Stats Overview - Full Width */}
+      <View marginTop="size-400">
+        <StatsOverview metrics={metrics ?? null} isLoading={metricsLoading} />
+      </View>
 
-        {/* Right Column - Activity Feed */}
-        <View data-column="right">
-          <ActivityFeed events={sortedEvents} maxItems={10} isLoading={eventsLoading} />
-        </View>
+      {/* Activity Feed - Below Stats */}
+      <View marginTop="size-400">
+        <ActivityFeed events={sortedEvents} maxItems={10} isLoading={eventsLoading} />
       </View>
     </View>
   )

@@ -5,10 +5,10 @@ import { type DashboardMetrics } from '../types/dashboard'
 
 export function useDashboardMetrics() {
   return useQuery({
-    queryKey: ['events'],
+    queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      const response = await api.get('/events')
-      const events = response.events as Event[]
+      const response = await api.get<{ events: Event[] }>('/events')
+      const events = response.events || []
 
       // Calculate metrics from events
       const metrics: DashboardMetrics = {

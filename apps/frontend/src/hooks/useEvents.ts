@@ -24,7 +24,7 @@ export function useEvents() {
     queryKey: ['events'],
     queryFn: async (): Promise<Event[]> => {
       const response = await api.get<{ events: Event[] }>('/events')
-      return response.events
+      return response.events || []
     },
   })
 }
@@ -42,6 +42,8 @@ export function useCreateEvent() {
     onSuccess: () => {
       // Invalidate events query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['events'] })
+      // Also invalidate dashboard metrics since they depend on events
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
     },
   })
 }
@@ -113,6 +115,28 @@ export function useUpdateEvent(eventId: string) {
       // Invalidate to ensure we have the latest data from server
       queryClient.invalidateQueries({ queryKey: ['events', eventId] })
       queryClient.invalidateQueries({ queryKey: ['events'] })
+      // Also invalidate dashboard metrics since they depend on events
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+    },
+  })
+}
+
+/**
+ * Hook to delete an event
+ */
+export function useDeleteEvent() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (eventId: string): Promise<void> => {
+      await api.delete(`/events/${eventId}`)
+    },
+    onSuccess: (_, eventId) => {
+      // Invalidate and remove from cache
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      queryClient.removeQueries({ queryKey: ['events', eventId] })
+      // Also invalidate dashboard metrics since they depend on events
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
     },
   })
 }

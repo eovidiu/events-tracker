@@ -186,4 +186,14 @@ export class EventService {
 
     return updatedEvent
   }
+
+  async deleteEvent(eventId: string, teamIds: string[]): Promise<void> {
+    // First verify the event exists and user has access
+    await this.getEventById(eventId, teamIds)
+
+    // Delete the event
+    await this.db
+      .delete(events)
+      .where(eq(events.id, eventId))
+  }
 }

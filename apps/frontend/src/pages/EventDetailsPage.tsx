@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   View,
@@ -7,9 +8,12 @@ import {
   Button,
   ProgressCircle,
   ActionButton,
+  DialogTrigger,
+  AlertDialog,
 } from '@adobe/react-spectrum'
-import { useEvent } from '../hooks/useEvents'
+import { useEvent, useDeleteEvent } from '../hooks/useEvents'
 import Edit from '@spectrum-icons/workflow/Edit'
+import Delete from '@spectrum-icons/workflow/Delete'
 import ArrowLeft from '@spectrum-icons/workflow/ArrowLeft'
 
 function formatDate(date: Date): string {
@@ -28,6 +32,20 @@ export function EventDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: event, isLoading, isError, error } = useEvent(id!)
+  const deleteEvent = useDeleteEvent()
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!id) return
+    setIsDeleting(true)
+    try {
+      await deleteEvent.mutateAsync(id)
+      navigate('/events')
+    } catch (error) {
+      console.error('Failed to delete event:', error)
+      setIsDeleting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -73,10 +91,27 @@ export function EventDetailsPage() {
             <ArrowLeft />
             <Text>Back to Events</Text>
           </Button>
-          <ActionButton onPress={() => navigate(`/events/${id}/edit`)}>
-            <Edit />
-            <Text>Edit Event</Text>
-          </ActionButton>
+          <Flex direction="row" gap="size-200">
+            <ActionButton onPress={() => navigate(`/events/${id}/edit`)}>
+              <Edit />
+              <Text>Edit Event</Text>
+            </ActionButton>
+            <DialogTrigger>
+              <ActionButton isDisabled={isDeleting}>
+                <Delete />
+                <Text>Delete</Text>
+              </ActionButton>
+              <AlertDialog
+                variant="destructive"
+                title="Delete Event"
+                primaryActionLabel="Delete"
+                cancelLabel="Cancel"
+                onPrimaryAction={handleDelete}
+              >
+                Are you sure you want to delete "{event.title}"? This action cannot be undone.
+              </AlertDialog>
+            </DialogTrigger>
+          </Flex>
         </Flex>
 
         {/* Event title */}
